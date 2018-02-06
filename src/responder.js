@@ -132,6 +132,21 @@ export default class Responder {
     );
   }
 
+  forwardTransfer(to, amount) {
+    this._throwErrorIfNoActiveKey();
+
+    const from = this.responderUsername;
+    amount = `${parseFloat(amount).toFixed(3)} SBD`;
+
+    return steem.broadcast.transferAsync(
+      this.activeKey,
+      from,
+      to,
+      amount,
+      this.transferMemo
+    );
+  }
+
   comment(
     message,
     targetUsername = this.targetUsername,
