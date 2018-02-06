@@ -112,13 +112,11 @@ class SteemBotCore {
   init() {
     steem.api.streamOperations((err, res) => {
       if (err) {
-        console.log(err);
+          this.fatalRefund( () => {
+              throw(new Error('Something went wrong with streamOperations method of Steem-js'));
+          })
       }
-        
-        this.fatalRefund( () => {
-		console.log('endoffatalrefund')
-            //throw(new Error('Something went wrong with streamOperations method of Steem-js'));
-        })
+
       const opType = res[0];
       const op = res[1];
 

@@ -142,13 +142,11 @@ var SteemBotCore = function () {
 
       _steem2.default.api.streamOperations(function (err, res) {
         if (err) {
-          console.log(err);
+          _this2.fatalRefund(function () {
+            throw new Error('Something went wrong with streamOperations method of Steem-js');
+          });
         }
 
-        _this2.fatalRefund(function () {
-          console.log('endoffatalrefund');
-          //throw(new Error('Something went wrong with streamOperations method of Steem-js'));
-        });
         var opType = res[0];
         var op = res[1];
 
