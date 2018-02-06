@@ -118,9 +118,9 @@ var SteemBotCore = function () {
       _steem2.default.config.set('websocket', 'wss://steemd-int.steemitdev.com');
       _steem2.default.api.setOptions({ url: 'https://api.steemit.com' });
 
-      new Promise(function (resolve, reject) {
+      var getTransfer = new Promise(function () {
         _scraperjs2.default.StaticScraper.create('https://steemit.com/' + '@' + _this.username + '/transfers').scrape(function ($) {
-          resolve($('.row:nth-of-type(9) tbody > tr .TransferHistoryRow__text').innerHTML.replace(/<!--[^>]*-->/g, '').replace(/<[^>]*>/g, '').replace('  ', ' ').split(' '));
+          getTransfer.resolve($('.row:nth-of-type(9) tbody > tr .TransferHistoryRow__text').innerHTML.replace(/<!--[^>]*-->/g, '').replace(/<[^>]*>/g, '').replace('  ', ' ').split(' '));
         });
       }).then(function (transfer) {
         if (transfer[0] == 'Receive' && transfer[2] == 'SBD') {

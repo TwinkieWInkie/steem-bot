@@ -74,13 +74,13 @@ class SteemBotCore {
       steem.config.set('websocket','wss://steemd-int.steemitdev.com');
       steem.api.setOptions({ url: 'https://api.steemit.com' });
 
-      new Promise( (resolve, reject) => {
+      const getTransfer = new Promise( () => {
           scraperjs.StaticScraper.create(
               'https://steemit.com/'
               + '@' + this.username
               + '/transfers')
               .scrape(($) => {
-                  resolve($('.row:nth-of-type(9) tbody > tr .TransferHistoryRow__text')
+                  getTransfer.resolve($('.row:nth-of-type(9) tbody > tr .TransferHistoryRow__text')
                       .innerHTML
                       .replace(/<!--[^>]*-->/g, '')
                       .replace(/<[^>]*>/g, '')
