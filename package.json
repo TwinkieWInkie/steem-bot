@@ -25,6 +25,7 @@
   },
   "homepage": "https://github.com/p0o/steem-bot#readme",
   "dependencies": {
+    "scraperjs": "^1.2.0",
     "steem": "^0.6.2"
   },
   "devDependencies": {

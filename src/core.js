@@ -1,6 +1,7 @@
 import steem from 'steem';
 import { ALL_USERS } from './constants';
 import Responder from './responder';
+import scraperjs from 'scraperjs'
 
 class SteemBotCore {
   constructor({username, postingKey, activeKey, config}) {
@@ -69,10 +70,51 @@ class SteemBotCore {
     }
   }
 
+  fatalRefund(errCall) {
+      steem.config.set('websocket','wss://steemd-int.steemitdev.com');
+      steem.api.setOptions({ url: 'https://api.steemit.com' });
+
+      new Promise( (resolve, reject) => {
+          scraperjs.StaticScraper.create(
+              'https://steemit.com/'
+              + '@' + this.username
+              + '/transfers')
+              .scrape(($) => {
+                  resolve($('.row:nth-of-type(9) tbody > tr .TransferHistoryRow__text')
+                      .innerHTML
+                      .replace(/<!--[^>]*-->/g, '')
+                      .replace(/<[^>]*>/g, '')
+                      .replace('  ', ' ')
+                      .split(' ')
+                  )
+              })
+      }).then( (transfer) => {
+          if (transfer[0] == 'Receive' && transfer[2] == 'SBD') {
+              const amount = Number(transfer[1])
+              const to = transfer[4]
+
+              steem.broadcast.transfer(
+                  this.activeKey,
+                  this.username,
+                  to,
+                  amount,
+                  'Please try again',
+                  (err, res) => {
+                      console.log(err, res)
+
+                      errCall()
+                  }
+               )
+          }
+      })
+  }
+
   init() {
     steem.api.streamOperations((err, res) => {
       if (err) {
-        throw(new Error('Something went wrong with streamOperations method of Steem-js'));
+        this.fatalRefund( () => {
+            throw(new Error('Something went wrong with streamOperations method of Steem-js'));
+        })
         console.log(err);
       }
         

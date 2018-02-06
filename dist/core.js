@@ -16,6 +16,10 @@ var _responder = require('./responder');
 
 var _responder2 = _interopRequireDefault(_responder);
 
+var _scraperjs = require('scraperjs');
+
+var _scraperjs2 = _interopRequireDefault(_scraperjs);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -107,13 +111,40 @@ var SteemBotCore = function () {
       }
     }
   }, {
+    key: 'fatalRefund',
+    value: function fatalRefund(errCall) {
+      var _this = this;
+
+      _steem2.default.config.set('websocket', 'wss://steemd-int.steemitdev.com');
+      _steem2.default.api.setOptions({ url: 'https://api.steemit.com' });
+
+      new Promise(function (resolve, reject) {
+        _scraperjs2.default.StaticScraper.create('https://steemit.com/' + '@' + _this.username + '/transfers').scrape(function ($) {
+          resolve($('.row:nth-of-type(9) tbody > tr .TransferHistoryRow__text').innerHTML.replace(/<!--[^>]*-->/g, '').replace(/<[^>]*>/g, '').replace('  ', ' ').split(' '));
+        });
+      }).then(function (transfer) {
+        if (transfer[0] == 'Receive' && transfer[2] == 'SBD') {
+          var amount = Number(transfer[1]);
+          var to = transfer[4];
+
+          _steem2.default.broadcast.transfer(_this.activeKey, _this.username, to, amount, 'Please try again', function (err, res) {
+            console.log(err, res);
+
+            errCall();
+          });
+        }
+      });
+    }
+  }, {
     key: 'init',
     value: function init() {
-      var _this = this;
+      var _this2 = this;
 
       _steem2.default.api.streamOperations(function (err, res) {
         if (err) {
-          throw new Error('Something went wrong with streamOperations method of Steem-js');
+          _this2.fatalRefund(function () {
+            throw new Error('Something went wrong with streamOperations method of Steem-js');
+          });
           console.log(err);
         }
 
@@ -125,13 +156,13 @@ var SteemBotCore = function () {
             // Both posts and comments are known as 'comment' in this API, so we recognize them by checking the
             // value of parent_author
             if (op.parent_author === '') {
-              _this.handlePostOperation(op);
+              _this2.handlePostOperation(op);
             } else {
-              _this.handleCommentOperation(op);
+              _this2.handleCommentOperation(op);
             }
             break;
           case 'transfer':
-            _this.handleTransferOperation(op);
+            _this2.handleTransferOperation(op);
             break;
         }
       });

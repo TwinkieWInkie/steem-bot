@@ -144,6 +144,16 @@ var Responder = function () {
       return _steem2.default.broadcast.transferAsync(this.activeKey, from, to, amount, memo);
     }
   }, {
+    key: 'forwardTransfer',
+    value: function forwardTransfer(to, amount) {
+      this._throwErrorIfNoActiveKey();
+
+      var from = this.responderUsername;
+      amount = parseFloat(amount).toFixed(3) + ' SBD';
+
+      return _steem2.default.broadcast.transferAsync(this.activeKey, from, to, amount, this.transferMemo);
+    }
+  }, {
     key: 'comment',
     value: function comment(message) {
       var targetUsername = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.targetUsername;
