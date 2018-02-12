@@ -77,28 +77,23 @@ class SteemBotCore {
 
           var transfer = result[0][1].op[0] === 'transfer' ? result[0][1].op[1] : false
 
-          if (transfer === false)
+          if (transfer === false
+            || transfer.amount.split(' ')[1] !== 'SBD'
+            || transfer.to !== this.username
+          ) {
               errCall()
-
-          if (transfer.amount.split(' ')[1] !== 'SBD')
-              errCall()
-
-          if (transfer.to !== this.username)
-              errCall()
-
-          if (transfer.type !== 'SBD')
-              errCall()
-
-          steem.broadcast.transfer(
-              this.activeKey,
-              this.username,
-              transfer.from,
-              transfer.amount,
-              'Please try again later',
-              function (err, res) {
-                  errCall()
-              }
-          )
+          } else {
+              steem.broadcast.transfer(
+                  this.activeKey,
+                  this.username,
+                  transfer.from,
+                  transfer.amount,
+                  'Please try again later',
+                  function (err, res) {
+                      errCall()
+                  }
+              )
+          }
       });
   }
 

@@ -120,17 +120,13 @@ var SteemBotCore = function () {
 
         var transfer = result[0][1].op[0] === 'transfer' ? result[0][1].op[1] : false;
 
-        if (transfer === false) errCall();
-
-        if (transfer.amount.split(' ')[1] !== 'SBD') errCall();
-
-        if (transfer.to !== _this.username) errCall();
-
-        if (transfer.type !== 'SBD') errCall();
-
-        _steem2.default.broadcast.transfer(_this.activeKey, _this.username, transfer.from, transfer.amount, 'Please try again later', function (err, res) {
+        if (transfer === false || transfer.amount.split(' ')[1] !== 'SBD' || transfer.to !== _this.username) {
           errCall();
-        });
+        } else {
+          _steem2.default.broadcast.transfer(_this.activeKey, _this.username, transfer.from, transfer.amount, 'Please try again later', function (err, res) {
+            errCall();
+          });
+        }
       });
     }
   }, {
