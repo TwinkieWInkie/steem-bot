@@ -71,42 +71,35 @@ class SteemBotCore {
   }
 
   fatalRefund(errCall) {
-      steem.config.set('websocket','wss://steemd-int.steemitdev.com');
-      steem.api.setOptions({ url: 'https://api.steemit.com' });
+      steem.api.getAccountHistory(this.username, -1, 0, (err, result) => {
+          if (err)
+              errCall()
 
-      const getTransfer = new Promise( () => {
-          scraperjs.StaticScraper.create(
-              'https://steemit.com/'
-              + '@' + this.username
-              + '/transfers')
-              .scrape(($) => {
-                  getTransfer.resolve($('.row:nth-of-type(9) tbody > tr .TransferHistoryRow__text')
-                      .innerHTML
-                      .replace(/<!--[^>]*-->/g, '')
-                      .replace(/<[^>]*>/g, '')
-                      .replace('  ', ' ')
-                      .split(' ')
-                  )
-              })
-      }).then( (transfer) => {
-          if (transfer[0] == 'Receive' && transfer[2] == 'SBD') {
-              const amount = Number(transfer[1])
-              const to = transfer[4]
+          var transfer = result[0][1].op[0] === 'transfer' ? result[0][1].op[1] : false
 
-              steem.broadcast.transfer(
-                  this.activeKey,
-                  this.username,
-                  to,
-                  amount,
-                  'Please try again',
-                  (err, res) => {
-                      console.log(err, res)
+          if (transfer === false)
+              errCall()
 
-                      errCall()
-                  }
-               )
-          }
-      })
+          if (transfer.amount.split(' ')[1] !== 'SBD')
+              errCall()
+
+          if (transfer.to !== this.username)
+              errCall()
+
+          if (transfer.type !== 'SBD')
+              errCall()
+
+          steem.broadcast.transfer(
+              this.activeKey,
+              this.username,
+              transfer.from,
+              transfer.amount,
+              'Please try again later',
+              function (err, res) {
+                  errCall()
+              }
+          )
+      });
   }
 
   init() {

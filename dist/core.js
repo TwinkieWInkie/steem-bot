@@ -115,24 +115,22 @@ var SteemBotCore = function () {
     value: function fatalRefund(errCall) {
       var _this = this;
 
-      _steem2.default.config.set('websocket', 'wss://steemd-int.steemitdev.com');
-      _steem2.default.api.setOptions({ url: 'https://api.steemit.com' });
+      _steem2.default.api.getAccountHistory(this.username, -1, 0, function (err, result) {
+        if (err) errCall();
 
-      var getTransfer = new Promise(function () {
-        _scraperjs2.default.StaticScraper.create('https://steemit.com/' + '@' + _this.username + '/transfers').scrape(function ($) {
-          getTransfer.resolve($('.row:nth-of-type(9) tbody > tr .TransferHistoryRow__text').innerHTML.replace(/<!--[^>]*-->/g, '').replace(/<[^>]*>/g, '').replace('  ', ' ').split(' '));
+        var transfer = result[0][1].op[0] === 'transfer' ? result[0][1].op[1] : false;
+
+        if (transfer === false) errCall();
+
+        if (transfer.amount.split(' ')[1] !== 'SBD') errCall();
+
+        if (transfer.to !== _this.username) errCall();
+
+        if (transfer.type !== 'SBD') errCall();
+
+        _steem2.default.broadcast.transfer(_this.activeKey, _this.username, transfer.from, transfer.amount, 'Please try again later', function (err, res) {
+          errCall();
         });
-      }).then(function (transfer) {
-        if (transfer[0] == 'Receive' && transfer[2] == 'SBD') {
-          var amount = Number(transfer[1]);
-          var to = transfer[4];
-
-          _steem2.default.broadcast.transfer(_this.activeKey, _this.username, to, amount, 'Please try again', function (err, res) {
-            console.log(err, res);
-
-            errCall();
-          });
-        }
       });
     }
   }, {
