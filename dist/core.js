@@ -205,7 +205,7 @@ var TransferListner = function () {
         _steem2.default.api.getAccountHistory(_this6.username, -1, 5, function (err, res) {
           res.forEach(function (i) {
             return new Promise(function (resolve, reject) {
-              return _this6.handleTransaction(i, resolve, reject);
+              return _this6.handleTransaction(i[1], resolve, reject);
             });
           });
         });
