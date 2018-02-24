@@ -147,8 +147,6 @@ class TransferListner {
 		setInterval(() => {
 			steem.api.getAccountHistory(this.username, -1, 5, (err, res) => {
 				res.forEach(i => new Promise((resolve, reject) => this.handleTransaction(i, resolve, reject)))
-			}).then(() => {
-	
 			})
 		}, 10000)
 	}

@@ -208,7 +208,7 @@ var TransferListner = function () {
               return _this6.handleTransaction(i, resolve, reject);
             });
           });
-        }).then(function () {});
+        });
       }, 10000);
     }
   }, {
