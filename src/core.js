@@ -181,7 +181,7 @@ class TransferListner {
 	}
 
 	giveDocument(doc, resolve, reject) {
-		doc.save(function () {
+		doc.save(function (err, dc) {
 			if (err)
 				reject()
 			else

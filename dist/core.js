@@ -244,7 +244,7 @@ var TransferListner = function () {
   }, {
     key: 'giveDocument',
     value: function giveDocument(doc, resolve, reject) {
-      doc.save(function () {
+      doc.save(function (err, dc) {
         if (err) reject();else resolve(doc);
       });
     }
