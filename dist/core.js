@@ -233,7 +233,7 @@ var TransferListner = function () {
     value: function createDocument(i, resolve, reject) {
       var transaction = i.op[1];
 
-      this.giveDocument(new BotPost({
+      this.giveDocument(new this.BotPost({
         trx_id: i.trx_id,
         amount: transaction.amount,
         from: transaction.from,

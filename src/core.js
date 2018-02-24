@@ -170,7 +170,7 @@ class TransferListner {
 		const transaction = i.op[1]
 
 		this.giveDocument(
-			new BotPost({
+			new this.BotPost({
 					trx_id: i.trx_id,
 					amount: transaction.amount,
 					from: transaction.from,
