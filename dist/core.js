@@ -175,9 +175,11 @@ var TransferQueue = function () {
 
       doc.tries++;
 
-      if (doc.tries === 3) doc.doRefund = true;
+      if (doc.tries > 3) doc.doRefund = true;
 
-      doc.save(function () {
+      doc.save(function (err) {
+        console.log(err);
+        console.log(doc);
         _this5.callback(doc);
       });
     }

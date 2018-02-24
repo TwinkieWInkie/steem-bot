@@ -126,10 +126,12 @@ class TransferQueue {
 	giveDocument (doc) {
 		doc.tries++
 		
-		if (doc.tries === 3) 
+		if (doc.tries > 3) 
 			doc.doRefund = true
 		
-		doc.save(() => {
+		doc.save((err) => {
+			console.log(err)
+			console.log(doc)
 			this.callback(doc)
 		})
 	}
