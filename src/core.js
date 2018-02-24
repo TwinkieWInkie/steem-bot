@@ -117,7 +117,7 @@ class TransferQueue {
 	
 	init () {
 		setInterval( () => {
-			BotPosts.find({ done: false }).exec((err, docs) => {
+			this.BotPost.find({ done: false }).exec((err, docs) => {
 				docs.forEach( (doc) => this.giveDocument(doc))
 			})
 		}, 15000)

@@ -161,7 +161,7 @@ var TransferQueue = function () {
       var _this4 = this;
 
       setInterval(function () {
-        BotPosts.find({ done: false }).exec(function (err, docs) {
+        _this4.BotPost.find({ done: false }).exec(function (err, docs) {
           docs.forEach(function (doc) {
             return _this4.giveDocument(doc);
           });
