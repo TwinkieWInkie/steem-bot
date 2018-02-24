@@ -1,15 +1,18 @@
 import steem from 'steem';
 import { ALL_USERS } from './constants';
 import Responder from './responder';
-import scraperjs from 'scraperjs'
 
 class SteemBotCore {
-  constructor({username, postingKey, activeKey, config}) {
+  constructor({username, postingKey, activeKey, config}, keystone) {
     this.username = username;
     this.postingKey = postingKey;
     this.activeKey = activeKey;
     this.config = config;
-    this.init();
+    this.BotPost = keystone.list('BotPosts').model
+	  
+	setTimeout( () => {
+		this.init();
+	},500)
   }
 
   handlePostOperation(op) {
@@ -96,34 +99,97 @@ class SteemBotCore {
           }
       });
   }
-
+  
   init() {
-    steem.api.streamOperations((err, res) => {
-      if (err) {
-          this.fatalRefund( () => {
-              throw(new Error('Something went wrong with streamOperations method of Steem-js'));
-          })
-      }
-
-      const opType = res[0];
-      const op = res[1];
-
-      switch(opType) {
-        case 'comment':
-          // Both posts and comments are known as 'comment' in this API, so we recognize them by checking the
-          // value of parent_author
-          if (op.parent_author === '') {
-            this.handlePostOperation(op);
-          } else {
-            this.handleCommentOperation(op);
-          }
-          break;
-        case 'transfer':
-          this.handleTransferOperation(op);
-          break;
-      }
-    });
+  	new TransferListner(this.username, this.BotPost)
+	new TransferQueue( (doc) => {
+		this.handleTransferOperation(doc)
+	}, this.BotPost)
   }
+}
+
+class TransferQueue {
+	constructor (callback, BotPost) {
+		this.callback = callback
+		this.BotPost = BotPost
+		this.init()
+	}
+	
+	init () {
+		setInterval( () => {
+			BotPosts.find({ done: false }).exec((err, docs) => {
+				docs.forEach( (doc) => this.giveDocument(doc))
+			})
+		}, 15000)
+	}
+	
+	giveDocument (doc) {
+		doc.tries++
+		
+		if (doc.tries === 3) 
+			doc.doRefund = true
+		
+		doc.save(() => {
+			this.callback(doc)
+		})
+	}
+}
+
+class TransferListner {
+	constructor(username, BotPost) {
+		this.username = username
+		this.BotPost = BotPost
+		
+		this.init()
+	}
+
+	init() {
+		setInterval(() => {
+			steem.api.getAccountHistory(this.username, -1, 5, (err, res) => {
+				res.forEach(i => new Promise((resolve, reject) => this.handleTransaction(i, resolve, reject)))
+			}).then(() => {
+	
+			})
+		}, 10000)
+	}
+
+	handleTransaction(i, resolve, reject) {
+		if (i.op[0] === 'transfer') {
+			if (i.op[1].to === this.username || i.op[1].from !== 'smartsteem') {
+				this.BotPost.findOne({trx_id: i.trx_id})
+					.exec((err, result) => {
+						if (result !== null) {
+							this.giveDocument(result, resolve, reject)
+						} else {
+							this.createDocument(i, resolve, reject)
+						}
+					})
+			} else reject()
+		} else reject()
+	}
+
+	createDocument(i, resolve, reject) {
+		const transaction = i.op[1]
+
+		this.giveDocument(
+			new BotPost({
+					trx_id: i.trx_id,
+					amount: transaction.amount,
+					from: transaction.from,
+					to: transaction.to,
+					memo: transaction.memo
+				}
+			))
+	}
+
+	giveDocument(doc, resolve, reject) {
+		doc.save(function () {
+			if (err)
+				reject()
+			else
+				resolve(doc)
+		})
+	}
 }
 
 export default SteemBotCore;

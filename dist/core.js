@@ -16,16 +16,14 @@ var _responder = require('./responder');
 
 var _responder2 = _interopRequireDefault(_responder);
 
-var _scraperjs = require('scraperjs');
-
-var _scraperjs2 = _interopRequireDefault(_scraperjs);
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var SteemBotCore = function () {
-  function SteemBotCore(_ref) {
+  function SteemBotCore(_ref, keystone) {
+    var _this = this;
+
     var username = _ref.username,
         postingKey = _ref.postingKey,
         activeKey = _ref.activeKey,
@@ -37,7 +35,11 @@ var SteemBotCore = function () {
     this.postingKey = postingKey;
     this.activeKey = activeKey;
     this.config = config;
-    this.init();
+    this.BotPost = keystone.list('BotPosts').model;
+
+    setTimeout(function () {
+      _this.init();
+    }, 500);
   }
 
   _createClass(SteemBotCore, [{
@@ -113,17 +115,17 @@ var SteemBotCore = function () {
   }, {
     key: 'fatalRefund',
     value: function fatalRefund(errCall) {
-      var _this = this;
+      var _this2 = this;
 
       _steem2.default.api.getAccountHistory(this.username, -1, 0, function (err, result) {
         if (err) errCall();
 
         var transfer = result[0][1].op[0] === 'transfer' ? result[0][1].op[1] : false;
 
-        if (transfer === false || transfer.amount.split(' ')[1] !== 'SBD' || transfer.to !== _this.username) {
+        if (transfer === false || transfer.amount.split(' ')[1] !== 'SBD' || transfer.to !== _this2.username) {
           errCall();
         } else {
-          _steem2.default.broadcast.transfer(_this.activeKey, _this.username, transfer.from, transfer.amount, 'Please try again later', function (err, res) {
+          _steem2.default.broadcast.transfer(_this2.activeKey, _this2.username, transfer.from, transfer.amount, 'Please try again later', function (err, res) {
             errCall();
           });
         }
@@ -132,37 +134,123 @@ var SteemBotCore = function () {
   }, {
     key: 'init',
     value: function init() {
-      var _this2 = this;
+      var _this3 = this;
 
-      _steem2.default.api.streamOperations(function (err, res) {
-        if (err) {
-          _this2.fatalRefund(function () {
-            throw new Error('Something went wrong with streamOperations method of Steem-js');
-          });
-        }
-
-        var opType = res[0];
-        var op = res[1];
-
-        switch (opType) {
-          case 'comment':
-            // Both posts and comments are known as 'comment' in this API, so we recognize them by checking the
-            // value of parent_author
-            if (op.parent_author === '') {
-              _this2.handlePostOperation(op);
-            } else {
-              _this2.handleCommentOperation(op);
-            }
-            break;
-          case 'transfer':
-            _this2.handleTransferOperation(op);
-            break;
-        }
-      });
+      new TransferListner(this.username, this.BotPost);
+      new TransferQueue(function (doc) {
+        _this3.handleTransferOperation(doc);
+      }, this.BotPost);
     }
   }]);
 
   return SteemBotCore;
+}();
+
+var TransferQueue = function () {
+  function TransferQueue(callback, BotPost) {
+    _classCallCheck(this, TransferQueue);
+
+    this.callback = callback;
+    this.BotPost = BotPost;
+    this.init();
+  }
+
+  _createClass(TransferQueue, [{
+    key: 'init',
+    value: function init() {
+      var _this4 = this;
+
+      setInterval(function () {
+        BotPosts.find({ done: false }).exec(function (err, docs) {
+          docs.forEach(function (doc) {
+            return _this4.giveDocument(doc);
+          });
+        });
+      }, 15000);
+    }
+  }, {
+    key: 'giveDocument',
+    value: function giveDocument(doc) {
+      var _this5 = this;
+
+      doc.tries++;
+
+      if (doc.tries === 3) doc.doRefund = true;
+
+      doc.save(function () {
+        _this5.callback(doc);
+      });
+    }
+  }]);
+
+  return TransferQueue;
+}();
+
+var TransferListner = function () {
+  function TransferListner(username, BotPost) {
+    _classCallCheck(this, TransferListner);
+
+    this.username = username;
+    this.BotPost = BotPost;
+
+    this.init();
+  }
+
+  _createClass(TransferListner, [{
+    key: 'init',
+    value: function init() {
+      var _this6 = this;
+
+      setInterval(function () {
+        _steem2.default.api.getAccountHistory(_this6.username, -1, 5, function (err, res) {
+          res.forEach(function (i) {
+            return new Promise(function (resolve, reject) {
+              return _this6.handleTransaction(i, resolve, reject);
+            });
+          });
+        }).then(function () {});
+      }, 10000);
+    }
+  }, {
+    key: 'handleTransaction',
+    value: function handleTransaction(i, resolve, reject) {
+      var _this7 = this;
+
+      if (i.op[0] === 'transfer') {
+        if (i.op[1].to === this.username || i.op[1].from !== 'smartsteem') {
+          this.BotPost.findOne({ trx_id: i.trx_id }).exec(function (err, result) {
+            if (result !== null) {
+              _this7.giveDocument(result, resolve, reject);
+            } else {
+              _this7.createDocument(i, resolve, reject);
+            }
+          });
+        } else reject();
+      } else reject();
+    }
+  }, {
+    key: 'createDocument',
+    value: function createDocument(i, resolve, reject) {
+      var transaction = i.op[1];
+
+      this.giveDocument(new BotPost({
+        trx_id: i.trx_id,
+        amount: transaction.amount,
+        from: transaction.from,
+        to: transaction.to,
+        memo: transaction.memo
+      }));
+    }
+  }, {
+    key: 'giveDocument',
+    value: function giveDocument(doc, resolve, reject) {
+      doc.save(function () {
+        if (err) reject();else resolve(doc);
+      });
+    }
+  }]);
+
+  return TransferListner;
 }();
 
 exports.default = SteemBotCore;

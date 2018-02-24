@@ -44,7 +44,7 @@ function getConfig(args) {
 }
 
 var SteemBot = function () {
-  function SteemBot(_ref) {
+  function SteemBot(_ref, keystone) {
     var username = _ref.username,
         postingKey = _ref.postingKey,
         activeKey = _ref.activeKey;
@@ -55,6 +55,7 @@ var SteemBot = function () {
     this.postingKey = postingKey;
     this.activeKey = activeKey;
     this.config = {};
+    this.keystone = keystone;
 
     if (!username) {
       throw new Error('Define your username as the first param of SteemBot constructor');
@@ -96,7 +97,7 @@ var SteemBot = function () {
         activeKey: this.activeKey,
         postingKey: this.postingKey,
         config: this.config
-      });
+      }, this.keystone);
     }
   }]);
 
