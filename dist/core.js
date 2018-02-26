@@ -251,29 +251,7 @@ var TransferListner = function () {
 		key: 'giveDocument',
 		value: function giveDocument(doc, resolve, reject, i) {
 			doc.save(function (err) {
-				if (err) reject();else this.alreadyUpvoted(i, doc, resolve, reject);
-			});
-		}
-	}, {
-		key: 'alreadyUpvoted',
-		value: function alreadyUpvoted(i, doc, resolve, reject) {
-			var _this8 = this;
-
-			var memo = i.op[1].memo;
-
-			var username = extractUsernameFromLink(transaction.memo);
-			var permlink = extractPermlinkFromLink(transaction.memo);
-
-			Promise(function (resolve, reject) {
-				return _steem2.default.api.getContent(username, permlink, function (err, res) {
-					if (res.active_votes.map(function (i) {
-						return i.voter === _this8.username;
-					}).length >= 1) reject('already upvoted');else resolve(doc);
-				});
-			}).then(function () {
-				return resolve(doc);
-			}).catch(function (err) {
-				return reject(err);
+				if (err) reject();else alreadyUpvoted(i, doc, resolve, reject);
 			});
 		}
 	}]);
@@ -298,4 +276,25 @@ function extractPermlinkFromLink(steemitLink) {
 
 	var firstPart = steemitLink.slice(usernamePos + 1); // adding 1 to remove the first "/"
 	return firstPart.slice(firstPart.search('/') + 1).replace('/', '').replace('#', '');
+}
+
+function alreadyUpvoted(i, doc, resolve, reject) {
+	var _this8 = this;
+
+	var memo = i.op[1].memo;
+
+	var username = extractUsernameFromLink(transaction.memo);
+	var permlink = extractPermlinkFromLink(transaction.memo);
+
+	Promise(function (resolve, reject) {
+		return _steem2.default.api.getContent(username, permlink, function (err, res) {
+			if (res.active_votes.map(function (i) {
+				return i.voter === _this8.username;
+			}).length >= 1) reject('already upvoted');else resolve(doc);
+		});
+	}).then(function () {
+		return resolve(doc);
+	}).catch(function (err) {
+		return reject(err);
+	});
 }

@@ -189,31 +189,11 @@ class TransferListner {
 			if (err)
 				reject()
 			else
-				this.alreadyUpvoted(i, doc, resolve, reject)
+				alreadyUpvoted(i, doc, resolve, reject)
 		})
 	}
 	
-	alreadyUpvoted(i, doc, resolve, reject) {
-		const memo = i.op[1].memo
-		
-		const username = extractUsernameFromLink(transaction.memo)
-		const permlink = extractPermlinkFromLink(transaction.memo)
-		
-		Promise(
-			(resolve, reject) => 
-				steem.api.getContent(username, permlink, (err, res) => {
-					if (
-						res.active_votes.map( (i) => i.voter === this.username).length
-						>= 1 
-					)
-						reject('already upvoted')
-					else 
-						resolve(doc)
-				}
-			)
-		).then( () => resolve(doc))
-			.catch( (err) => reject(err))
-	}
+
 }
 
 export default SteemBotCore;
@@ -233,4 +213,26 @@ function extractPermlinkFromLink(steemitLink) {
 
 	const firstPart = steemitLink.slice(usernamePos + 1); // adding 1 to remove the first "/"
 	return firstPart.slice(firstPart.search('/') + 1).replace('/', '').replace('#', '');
+}
+
+function alreadyUpvoted(i, doc, resolve, reject) {
+	const memo = i.op[1].memo
+
+	const username = extractUsernameFromLink(transaction.memo)
+	const permlink = extractPermlinkFromLink(transaction.memo)
+
+	Promise(
+		(resolve, reject) =>
+			steem.api.getContent(username, permlink, (err, res) => {
+					if (
+						res.active_votes.map( (i) => i.voter === this.username).length
+						>= 1
+					)
+						reject('already upvoted')
+					else
+						resolve(doc)
+				}
+			)
+	).then( () => resolve(doc))
+		.catch( (err) => reject(err))
 }
