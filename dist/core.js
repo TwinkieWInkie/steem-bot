@@ -139,7 +139,7 @@ var SteemBotCore = function () {
 			new TransferListner(this.username, this.BotPost);
 			new TransferQueue(function (doc) {
 				_this3.handleTransferOperation(doc);
-			}, this.BotPost);
+			}, this.BotPost, this.username);
 		}
 	}]);
 
@@ -147,11 +147,12 @@ var SteemBotCore = function () {
 }();
 
 var TransferQueue = function () {
-	function TransferQueue(callback, BotPost) {
+	function TransferQueue(callback, BotPost, username) {
 		_classCallCheck(this, TransferQueue);
 
 		this.callback = callback;
 		this.BotPost = BotPost;
+		this.username = username;
 		this.init();
 	}
 
@@ -180,8 +181,18 @@ var TransferQueue = function () {
 			doc.save(function (err) {
 				console.log(err);
 				console.log(doc);
-				_this5.callback(doc);
+				alreadyUpvoted().then(function () {
+					return _this5.callback(doc);
+				}).catch(function () {
+					return _this5.updateDoc(doc);
+				});
 			});
+		}
+	}, {
+		key: 'updateDoc',
+		value: function updateDoc(doc) {
+			doc.done = true;
+			doc.receivedUpvote = true;
 		}
 	}]);
 
@@ -251,11 +262,7 @@ var TransferListner = function () {
 		key: 'giveDocument',
 		value: function giveDocument(doc, resolve, reject, i) {
 			doc.save(function (err) {
-				if (err) reject();else alreadyUpvoted(i, doc, resolve, reject).then(function () {
-					return resolve(doc);
-				}).catch(function (err) {
-					return reject(err);
-				});
+				if (err) reject();else resolve(doc);
 			});
 		}
 	}]);
@@ -282,18 +289,14 @@ function extractPermlinkFromLink(steemitLink) {
 	return firstPart.slice(firstPart.search('/') + 1).replace('/', '').replace('#', '');
 }
 
-function alreadyUpvoted(i, doc, resolve, reject) {
-	var _this8 = this;
-
-	var memo = i.op[1].memo;
-
-	var username = extractUsernameFromLink(memo);
-	var permlink = extractPermlinkFromLink(memo);
+function alreadyUpvoted(doc, username) {
+	var author = extractUsernameFromLink(doc.memo);
+	var permlink = extractPermlinkFromLink(doc.memo);
 
 	return new Promise(function (resolve, reject) {
-		return _steem2.default.api.getContent(username, permlink, function (err, res) {
+		return _steem2.default.api.getContent(author, permlink, function (err, res) {
 			if (res.active_votes.map(function (i) {
-				return i.voter === _this8.username;
+				return i.voter === username;
 			}).length >= 1) reject('already upvoted');else resolve(doc);
 		});
 	});

@@ -104,14 +104,15 @@ class SteemBotCore {
   	new TransferListner(this.username, this.BotPost)
 	new TransferQueue( (doc) => {
 		this.handleTransferOperation(doc)
-	}, this.BotPost)
+	}, this.BotPost, this.username)
   }
 }
 
 class TransferQueue {
-	constructor (callback, BotPost) {
+	constructor (callback, BotPost, username) {
 		this.callback = callback
 		this.BotPost = BotPost
+		this.username = username
 		this.init()
 	}
 	
@@ -132,8 +133,15 @@ class TransferQueue {
 		doc.save((err) => {
 			console.log(err)
 			console.log(doc)
-			this.callback(doc)
+			alreadyUpvoted()
+				.then(() => this.callback(doc))
+				.catch(() => this.updateDoc(doc))
 		})
+	}
+	
+	updateDoc(doc) {
+		doc.done = true
+		doc.receivedUpvote = true
 	}
 }
 
@@ -189,9 +197,7 @@ class TransferListner {
 			if (err)
 				reject()
 			else
-				alreadyUpvoted(i, doc, resolve, reject)
-					.then( () => resolve(doc))
-					.catch( (err) => reject(err))
+				resolve(doc)
 		})
 	}
 	
@@ -217,17 +223,16 @@ function extractPermlinkFromLink(steemitLink) {
 	return firstPart.slice(firstPart.search('/') + 1).replace('/', '').replace('#', '');
 }
 
-function alreadyUpvoted(i, doc, resolve, reject) {
-	const memo = i.op[1].memo
 
-	const username = extractUsernameFromLink(memo)
-	const permlink = extractPermlinkFromLink(memo)
+function alreadyUpvoted(doc, username) {
+	const author = extractUsernameFromLink(doc.memo)
+	const permlink = extractPermlinkFromLink(doc.memo)
 
 	return new Promise(
 		(resolve, reject) =>
-			steem.api.getContent(username, permlink, (err, res) => {
+			steem.api.getContent(author, permlink, (err, res) => {
 					if (
-						res.active_votes.map( (i) => i.voter === this.username).length
+						res.active_votes.map( (i) => i.voter === username).length
 						>= 1
 					)
 						reject('already upvoted')
