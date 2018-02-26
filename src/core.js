@@ -218,8 +218,8 @@ function extractPermlinkFromLink(steemitLink) {
 function alreadyUpvoted(i, doc, resolve, reject) {
 	const memo = i.op[1].memo
 
-	const username = extractUsernameFromLink(transaction.memo)
-	const permlink = extractPermlinkFromLink(transaction.memo)
+	const username = extractUsernameFromLink(memo)
+	const permlink = extractPermlinkFromLink(memo)
 
 	Promise(
 		(resolve, reject) =>

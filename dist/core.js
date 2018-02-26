@@ -283,8 +283,8 @@ function alreadyUpvoted(i, doc, resolve, reject) {
 
 	var memo = i.op[1].memo;
 
-	var username = extractUsernameFromLink(transaction.memo);
-	var permlink = extractPermlinkFromLink(transaction.memo);
+	var username = extractUsernameFromLink(memo);
+	var permlink = extractPermlinkFromLink(memo);
 
 	Promise(function (resolve, reject) {
 		return _steem2.default.api.getContent(username, permlink, function (err, res) {
