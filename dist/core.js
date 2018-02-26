@@ -251,7 +251,11 @@ var TransferListner = function () {
 		key: 'giveDocument',
 		value: function giveDocument(doc, resolve, reject, i) {
 			doc.save(function (err) {
-				if (err) reject();else alreadyUpvoted(i, doc, resolve, reject);
+				if (err) reject();else alreadyUpvoted(i, doc, resolve, reject).then(function () {
+					return resolve(doc);
+				}).catch(function (err) {
+					return reject(err);
+				});
 			});
 		}
 	}]);
@@ -286,15 +290,11 @@ function alreadyUpvoted(i, doc, resolve, reject) {
 	var username = extractUsernameFromLink(memo);
 	var permlink = extractPermlinkFromLink(memo);
 
-	Promise(function (resolve, reject) {
+	return new Promise(function (resolve, reject) {
 		return _steem2.default.api.getContent(username, permlink, function (err, res) {
 			if (res.active_votes.map(function (i) {
 				return i.voter === _this8.username;
 			}).length >= 1) reject('already upvoted');else resolve(doc);
 		});
-	}).then(function () {
-		return resolve(doc);
-	}).catch(function (err) {
-		return reject(err);
 	});
 }

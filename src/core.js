@@ -190,6 +190,8 @@ class TransferListner {
 				reject()
 			else
 				alreadyUpvoted(i, doc, resolve, reject)
+					.then( () => resolve(doc))
+					.catch( (err) => reject(err))
 		})
 	}
 	
@@ -221,7 +223,7 @@ function alreadyUpvoted(i, doc, resolve, reject) {
 	const username = extractUsernameFromLink(memo)
 	const permlink = extractPermlinkFromLink(memo)
 
-	Promise(
+	return new Promise(
 		(resolve, reject) =>
 			steem.api.getContent(username, permlink, (err, res) => {
 					if (
@@ -233,6 +235,5 @@ function alreadyUpvoted(i, doc, resolve, reject) {
 						resolve(doc)
 				}
 			)
-	).then( () => resolve(doc))
-		.catch( (err) => reject(err))
+	)
 }
