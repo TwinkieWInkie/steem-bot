@@ -159,7 +159,7 @@ class TransferListner {
 				this.BotPost.findOne({trx_id: i.trx_id})
 					.exec((err, result) => {
 						if (result !== null) {
-							this.giveDocument(result, resolve, reject)
+							this.giveDocument(result, resolve, reject, i)
 						} else {
 							this.createDocument(i, resolve, reject)
 						}
@@ -179,17 +179,55 @@ class TransferListner {
 					to: transaction.to,
 					memo: transaction.memo
 				}
-			))
+			), resolve, reject, i)
 	}
 
-	giveDocument(doc, resolve, reject) {
-		doc.save(function (err, dc) {
+	giveDocument(doc, resolve, reject, i) {
+		doc.save(function (err) {
 			if (err)
 				reject()
 			else
-				resolve(doc)
+				this.alreadyUpvoted(i, doc)
+					.then(resolve(doc))
+					.catch(reject())
 		})
+	}
+	
+	alreadyUpvoted(i, doc) {
+		const memo = i.op[1].memo
+		
+		const username = extractUsernameFromLink(transaction.memo)
+		const permlink = extractPermlinkFromLink(transaction.memo)
+		
+		return Promise(
+			(resolve, reject) => 
+				steem.api.getContent(username, permlink, (err, res) => {
+					if (
+						res.active_votes.map( (i) => i.voter === this.username).length
+						> 0
+					)
+						resolve(doc)
+				}
+			)
+		)
 	}
 }
 
 export default SteemBotCore;
+
+
+function extractUsernameFromLink(steemitLink) {
+	const usernamePos = steemitLink.search(/\/@.+\//);
+	if (usernamePos === -1) return;
+
+	const firstPart = steemitLink.slice(usernamePos + 2); // adding 2 to remove "/@"
+	return firstPart.slice(0, firstPart.search('/'))
+}
+
+function extractPermlinkFromLink(steemitLink) {
+	const usernamePos = steemitLink.search(/\/@.+\//);
+	if (usernamePos === -1) return;
+
+	const firstPart = steemitLink.slice(usernamePos + 1); // adding 1 to remove the first "/"
+	return firstPart.slice(firstPart.search('/') + 1).replace('/', '').replace('#', '');
+}
