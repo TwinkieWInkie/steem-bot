@@ -133,7 +133,7 @@ class TransferQueue {
 		doc.save((err) => {
 			console.log(err)
 			console.log(doc)
-			alreadyUpvoted()
+			alreadyUpvoted(doc, this.username)
 				.then(() => this.callback(doc))
 				.catch(() => this.updateDoc(doc))
 		})

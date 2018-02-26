@@ -181,7 +181,7 @@ var TransferQueue = function () {
 			doc.save(function (err) {
 				console.log(err);
 				console.log(doc);
-				alreadyUpvoted().then(function () {
+				alreadyUpvoted(doc, _this5.username).then(function () {
 					return _this5.callback(doc);
 				}).catch(function () {
 					return _this5.updateDoc(doc);
