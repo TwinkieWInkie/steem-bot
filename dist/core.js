@@ -207,7 +207,11 @@ var TransferListner = function () {
 				_steem2.default.api.getAccountHistory(_this6.username, -1, 5, function (err, res) {
 					res.forEach(function (i) {
 						return new Promise(function (resolve, reject) {
-							return _this6.handleTransaction(i[1], resolve, reject);
+							return _this6.handleTransaction(i[1], resolve, reject).then(function () {
+								return console.log('Success');
+							}).catch(function (err) {
+								return console.log(err);
+							});
 						});
 					});
 				});
@@ -247,7 +251,11 @@ var TransferListner = function () {
 		key: 'giveDocument',
 		value: function giveDocument(doc, resolve, reject, i) {
 			doc.save(function (err) {
-				if (err) reject();else this.alreadyUpvoted(i, doc).then(resolve(doc)).catch(reject());
+				if (err) reject();else this.alreadyUpvoted(i, doc).then(function () {
+					return resolve(doc);
+				}).catch(function (err) {
+					return reject(err);
+				});
 			});
 		}
 	}, {
@@ -264,7 +272,7 @@ var TransferListner = function () {
 				return _steem2.default.api.getContent(username, permlink, function (err, res) {
 					if (res.active_votes.map(function (i) {
 						return i.voter === _this8.username;
-					}).length > 0) resolve(doc);
+					}).length >= 1) reject('already upvoted');else resolve(doc);
 				});
 			});
 		}

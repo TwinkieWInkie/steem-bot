@@ -148,7 +148,9 @@ class TransferListner {
 	init() {
 		setInterval(() => {
 			steem.api.getAccountHistory(this.username, -1, 5, (err, res) => {
-				res.forEach(i => new Promise((resolve, reject) => this.handleTransaction(i[1], resolve, reject)))
+				res.forEach(i => new Promise((resolve, reject) => this.handleTransaction(i[1], resolve, reject)
+					.then(() => console.log ('Success'))
+					.catch((err) => console.log(err))))
 			})
 		}, 10000)
 	}
@@ -188,8 +190,8 @@ class TransferListner {
 				reject()
 			else
 				this.alreadyUpvoted(i, doc)
-					.then(resolve(doc))
-					.catch(reject())
+					.then(() => resolve(doc))
+					.catch((err) => reject(err))
 		})
 	}
 	
@@ -204,8 +206,10 @@ class TransferListner {
 				steem.api.getContent(username, permlink, (err, res) => {
 					if (
 						res.active_votes.map( (i) => i.voter === this.username).length
-						> 0
+						>= 1 
 					)
+						reject('already upvoted')
+					else 
 						resolve(doc)
 				}
 			)
