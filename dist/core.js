@@ -295,7 +295,7 @@ function alreadyUpvoted(doc, username) {
 
 	return new Promise(function (resolve, reject) {
 		return _steem2.default.api.getContent(author, permlink, function (err, res) {
-			if (res.active_votes !== null) {
+			if (typeof res.active_votes !== 'undefined') {
 				if (res.active_votes.map(function (i) {
 					return i.voter === username;
 				}).includes(true)) {
