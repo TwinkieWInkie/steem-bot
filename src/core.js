@@ -103,7 +103,9 @@ class SteemBotCore {
   init() {
   	new TransferListner(this.username, this.BotPost)
 	new TransferQueue( (doc) => {
-		this.handleTransferOperation(doc)
+		if (doc.from !== this.username)
+			
+			this.handleTransferOperation(doc)
 	}, this.BotPost, this.username)
   }
 }

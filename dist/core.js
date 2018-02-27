@@ -138,7 +138,7 @@ var SteemBotCore = function () {
 
 			new TransferListner(this.username, this.BotPost);
 			new TransferQueue(function (doc) {
-				_this3.handleTransferOperation(doc);
+				if (doc.from !== _this3.username) _this3.handleTransferOperation(doc);
 			}, this.BotPost, this.username);
 		}
 	}]);
