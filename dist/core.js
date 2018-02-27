@@ -297,7 +297,7 @@ function alreadyUpvoted(doc, username) {
 		return _steem2.default.api.getContent(author, permlink, function (err, res) {
 			if (res.active_votes.map(function (i) {
 				return i.voter === username;
-			}).contains(true)) reject('already upvoted');else resolve(doc);
+			}).includes(true)) reject('already upvoted');else resolve(doc);
 		});
 	});
 }

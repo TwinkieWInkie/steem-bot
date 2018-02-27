@@ -232,7 +232,7 @@ function alreadyUpvoted(doc, username) {
 		(resolve, reject) =>
 			steem.api.getContent(author, permlink, (err, res) => {
 					if (
-						res.active_votes.map( (i) => i.voter === username).contains(true)
+						res.active_votes.map( (i) => i.voter === username).includes(true)
 					)
 						reject('already upvoted')
 					else
