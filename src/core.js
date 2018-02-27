@@ -233,13 +233,15 @@ function alreadyUpvoted(doc, username) {
 	return new Promise(
 		(resolve, reject) =>
 			steem.api.getContent(author, permlink, (err, res) => {
-					if (
-						res.active_votes.map( (i) => i.voter === username).includes(true)
-					)
+				if(res.active_votes !== null) {
+					if (res.active_votes.map( (i) => i.voter === username).includes(true)) {
 						reject('already upvoted')
-					else
+					} else {
 						resolve(doc)
+					}
+				} else {
+					resolve(doc)
 				}
-			)
+			})
 	)
 }
